@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>第一周作业</title>
+  </head>
+  <body>
+    <div id="board"></div>
+  </body>
+  <script>
+    let pattern = [
+      [0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0],
+    ];
+    let flag = 1;
+
+    function show() {
+      let board = document.getElementById('board');
+      board.innerHTML = '';
+      pattern.map((col, y) => {
+        col.map((item, x) => {
+          let cell = document.createElement('div');
+          cell.classList.add('cell');
+          cell.addEventListener('click', () => clickCell(y, x));
+          cell.innerHTML = item == 1 ? '⭕️' : item == 2 ? '❌' : '';
+          board.appendChild(cell);
+        });
+        board.appendChild(document.createElement('br'));
+      });
+    }
+
+    function clickCell(x, y) {
+      pattern[x][y] = flag;
+      // console.log(check())
+      if (check(pattern, flag)) {
+        if (flag === 1) {
+          // console.log()
+          alert('⭕️赢了哦！');
+        }
+        if (flag === 2) {
+          alert('❌赢了哦！');
+        }
+      }
+      flag = 3 - flag;
+      show(pattern);
+      comMove();
+    }
+
+    function check(pattern, flag) {
+      {
+        for (let y = 0; y < 3; y++) {
+          let win = true;
+          for (let x = 0; x < 3; x++) {
+            if (pattern[y][x] !== flag) {
+              win = false;
+            }
+          }
+          if (win) return true;
+        }
+      }
+      {
+        let win = true;
+        for (let y = 0; y < 3; y++) {
+          let win = true;
+
+          for (let x = 0; x < 3; x++) {
+            if (pattern[x][y] !== flag) {
+              win = false;
+            }
+          }
+          if (win) return true;
+        }
+      }
+      {
+        let win = true;
+        for (let y = 0; y < 3; y++) {
+          if (pattern[y][2 - y] !== flag) {
+            win = false;
+          }
+        }
+        if (win) return true;
+      }
+      {
+        let win = true;
+        for (let y = 0; y < 3; y++) {
+          if (pattern[y][y] !== flag) {
+            win = false;
+          }
+        }
+        if (win) return true;
+      }
+      return false;
+    }
+
+    function clone(pattern) {
+      return JSON.parse(JSON.stringify(pattern));
+    }
+
+    function willWin(pattern, flag) {
+      for (let y = 0; y < 3; y++) {
+        for (let x = 0; x < 3; x++) {
+          if (pattern[y][x]) continue;
+          let temp = clone(pattern);
+          temp[y][x] = flag;
+          if (check(temp, flag)) {
+            return [y, x];
+          }
+        }
+      }
+
+      return false;
+    }
+
+    function bestChoice(pattern, flag) {
+      let p;
+      if ((p = willWin(pattern, flag))) {
+        return {
+          point: willWin(pattern, flag),
+          res: 1,
+        };
+      }
+      let point = null;
+      let res = -2;
+      outer: for (let y = 0; y < 3; y++) {
+        for (let x = 0; x < 3; x++) {
+          if (pattern[y][x]) continue;
+          let temp = clone(pattern);
+          temp[y][x] = flag;
+          let r = bestChoice(temp, 3 - flag).res;
+          if (-r > res) {
+            point = [y, x];
+            res = -r;
+          }
+          if (res == 1) {
+            break outer;
+          }
+        }
+      }
+      return {
+        point: point,
+        res: point ? res : 0,
+      };
+    }
+
+    function comMove() {
+      let choice = bestChoice(pattern, flag);
+      if (choice.point) pattern[choice.point[0]][choice.point[1]] = flag;
+      if (check(pattern, flag)) {
+        if (flag === 1) {
+          // console.log()
+          alert('⭕️赢了哦！');
+        }
+        if (flag === 2) {
+          alert('❌赢了哦！');
+        }
+      }
+      flag = 3 - flag;
+      show(pattern);
+    }
+    show(pattern);
+  </script>
+  <style>
+    .cell {
+      width: 100px;
+      height: 100px;
+      background-color: green;
+      display: inline-block;
+      vertical-align: middle;
+      border: solid 1px white;
+
+      font-size: 50px;
+      line-height: 100px;
+      text-align: center;
+    }
+  </style>
+</html>
