@@ -1,0 +1,247 @@
+<!--
+ * @Author: yangskun
+ * @Date: 2021-03-03 19:33:51
+ * @LastEditors: yangskun
+ * @LastEditTime: 2021-03-07 18:46:03
+ * @Description: 实现地图编辑器并实现寻路算法
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>地图寻路</title>
+  </head>
+
+  <body>
+    <div id="main"></div>
+    <button onclick="edit()">编辑</button>
+    <button onclick="save()">保存</button>
+    <button onclick="clearMap()">清除</button>
+    起点：x<input class="inp" id="sx" min="0" max="100" type="number" />y<input
+      class="inp"
+      min="0"
+      max="100"
+      id="sy"
+      type="number"
+    />
+    终点：x<input class="inp" min="0" max="100" id="ex" type="number" />y<input
+      class="inp"
+      min="0"
+      max="100"
+      id="ey"
+      type="number"
+    />
+    <button onclick="find()">寻路</button>
+  </body>
+  <script>
+    let map = localStorage['map'] ? JSON.parse(localStorage['map']) : new Array(100 * 100).fill(0);
+    let isedit = false;
+    document.getElementsByClassName('inp')[0].addEventListener('input', function (event) {
+      event.target.value = event.target.value.replace(/\-/g, '');
+    });
+    document.getElementsByClassName('inp')[1].addEventListener('input', function (event) {
+      event.target.value = event.target.value.replace(/\-/g, '');
+    });
+    document.getElementsByClassName('inp')[2].addEventListener('input', function (event) {
+      event.target.value = event.target.value.replace(/\-/g, '');
+    });
+    document.getElementsByClassName('inp')[3].addEventListener('input', function (event) {
+      event.target.value = event.target.value.replace(/\-/g, '');
+    });
+    class Sorted {
+      constructor(data, compare) {
+        this.data = data;
+        this.compare = compare || ((a, b) => a - b);
+      }
+      take() {
+        if (!this.data.length) return;
+        let min = this.data[0];
+        let minIndex = 0;
+        for (let i = 0; i < this.data.length; i++) {
+          if (this.compare(min, this.data[i]) > 0) {
+            min = this.data[i];
+            minIndex = i;
+          }
+        }
+        this.data[minIndex] = this.data[this.data.length - 1];
+        this.data.pop();
+        console.log(min);
+        return min;
+      }
+      give(v) {
+        this.data.push(v);
+      }
+    }
+
+    function clearMap() {
+      map = new Array(100 * 100).fill(0);
+      renderMap(map);
+    }
+
+    function find() {
+      let sx = parseInt(document.getElementById('sx').value);
+      let sy = parseInt(document.getElementById('sy').value);
+      let ex = parseInt(document.getElementById('ex').value);
+      let ey = parseInt(document.getElementById('ey').value);
+      if (sx > 100) {
+        alert('起点x值输入错误');
+      } else if (sy > 100) {
+        alert('起点y值输入错误');
+      } else if (ex > 100) {
+        alert('终点x值输入错误');
+      } else if (ey > 100) {
+        alert('终点y值输入错误');
+      } else {
+        findPath(map, [sx, sy], [ex, ey]);
+      }
+
+      console.log(sx);
+    }
+
+    function edit() {
+      isedit = true;
+    }
+
+    function save() {
+      console.log(map);
+      localStorage['map'] = JSON.stringify(map);
+      isedit = false;
+    }
+    let main = document.getElementById('main');
+
+    function renderMap(map) {
+      main.innerHTML = '';
+      for (let y = 0; y < 100; y++) {
+        for (let x = 0; x < 100; x++) {
+          let cell = document.createElement('div');
+          cell.classList.add('cell');
+          if (map[100 * y + x] === 1) {
+            cell.style.background = 'black';
+          }
+          cell.addEventListener('mousemove', () => {
+            if (mousedown) {
+              if (clear) {
+                cell.style.background = '';
+                map[100 * y + x] = 0;
+              } else {
+                cell.style.background = 'black';
+                map[100 * y + x] = 1;
+              }
+            }
+          });
+          main.appendChild(cell);
+        }
+        // main.appendChild(document.createElement('br'))
+      }
+    }
+    renderMap(map);
+    let mousedown = false;
+    let clear = false;
+    document.addEventListener('mousedown', (e) => {
+      if (isedit) {
+        mousedown = true;
+        clear = e.which == 3;
+      }
+    });
+    document.addEventListener('mouseup', () => {
+      mousedown = false;
+    });
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+
+    function sleep(t) {
+      return new Promise((resolve, reject) => {
+        setTimeout(resolve, t);
+      });
+    }
+    async function findPath(map, starat, end) {
+      renderMap(map);
+      let table = Object.create(map);
+      console.log(table);
+      let queue = new Sorted([starat], (a, b) => distance(a) - distance(b));
+      // console.log(queue)
+      function distance(p) {
+        return (p[0] - end[0]) ** 2 + (p[1] - end[1]) ** 2;
+      }
+      async function insert(x, y, pre) {
+        if (x < 0 || x >= 100 || y < 0 || y >= 100) {
+          return;
+        }
+        if (table[100 * y + x]) {
+          return;
+        }
+        await sleep(1);
+        main.children[100 * y + x].style.background = 'lightgreen';
+        // map[100 * y + x] = 2
+        table[100 * y + x] = pre;
+        // console.log(table)
+        queue.give([x, y]);
+      }
+      // console.log(queue.data)
+      while (queue.data.length) {
+        let [x, y] = queue.take();
+        console.log(x, y);
+        if (x === end[0] && y === end[1]) {
+          // [x,y] = table[100 * y + x]
+          // console.log(x,y)
+          // return true
+          // let i = x, j = y
+          let path = [];
+          while (x != starat[0] || y != starat[1]) {
+            // console.log(x,y)
+            path.push(table[100 * y + x]);
+            // [x, y] = table[100 * y + x]
+
+            // [x, y] = table[100 * y + x]
+            let [i, j] = table[100 * y + x];
+            (x = i), (y = j);
+            console.log(x, y, table[100 * y + x]);
+
+            await sleep(1);
+            // console.log(x,y)
+            main.children[100 * y + x].style.background = 'red';
+          }
+          console.log(path);
+          return path;
+        }
+        await insert(x + 1, y, [x, y]);
+        await insert(x - 1, y, [x, y]);
+        await insert(x, y + 1, [x, y]);
+        await insert(x, y - 1, [x, y]);
+
+        await insert(x - 1, y - 1, [x, y]);
+        await insert(x + 1, y - 1, [x, y]);
+        await insert(x + 1, y + 1, [x, y]);
+        await insert(x - 1, y + 1, [x, y]);
+      }
+      return null;
+    }
+  </script>
+  <style>
+    /* *{
+    margin: 0;
+    padding: 0;
+  } */
+    #main {
+      width: 700px;
+      /* height: 800px; */
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .cell {
+      /* display: inline-block; */
+      height: 6px;
+      line-height: 7px;
+      vertical-align: middle;
+      width: 6px;
+      /* border: 1px solid; */
+      border-right: 1px solid;
+      border-bottom: 1px solid;
+      background: #ccc;
+    }
+  </style>
+</html>
