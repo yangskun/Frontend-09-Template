@@ -1,0 +1,191 @@
+<!--
+ * @Author: yangskun
+ * @Date: 2021-03-11 19:50:11
+ * @LastEditors: yangskun
+ * @LastEditTime: 2021-03-14 20:14:22
+ * @Description: file content
+-->
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LL算法构建AST - 四则运算</title>
+  </head>
+  <body>
+    <input type="text" id="text" placeholder="请输入一个四则运算..." /><br /><br />
+    <button id="btn">语法分析</button><br /><br />
+    <div id="analysis"></div>
+    <script>
+      const text = document.getElementById('text');
+      const btn = document.getElementById('btn');
+      const analysis = document.getElementById('analysis');
+
+      let regexp = /([0-9\.]+)|([ \t]+)|([\r\n]+)|(\*)|(\/)|(\+)|(\-)/g;
+      let dictionary = ['Number', 'Whitespace', 'LineTerminator', '*', '/', '+', '-'];
+      let lexicalDictionary = ['Number', '*', '/', '+', '-'];
+
+      function* tokenize(source) {
+        var result = null;
+        var lastIndex = 0;
+        let token = {
+          type: null,
+          value: null,
+        };
+        while (true) {
+          lastIndex = regexp.lastIndex;
+          result = regexp.exec(source);
+          if (!result) break;
+          if (regexp.lastIndex - lastIndex > result[0].length) {
+            alert(`unsupported character: ${source.slice(lastIndex, regexp.lastIndex - 1)}`);
+            break;
+          }
+          for (let i = 1; i <= dictionary.length; i++) {
+            if (result[i]) {
+              token = {
+                type: dictionary[i - 1],
+                value: result[0],
+              };
+              yield token;
+            }
+          }
+        }
+        yield {
+          type: 'EOF',
+        };
+      }
+
+      function tokenizeAndTrim(content) {
+        let source = [];
+        for (let token of tokenize(content)) {
+          if (token.type !== 'Whitespace' && token.type !== 'LineTerminator') {
+            source.push(token);
+          }
+        }
+        return source;
+      }
+
+      function Expression(source) {
+        if (source[0].type === 'AdditiveExpression' && source[1] && source[1].type === 'EOF') {
+          let node = {
+            type: 'Expression',
+            children: [source[0]],
+          };
+          source.unshift(node);
+          return node;
+        }
+        AdditiveExpression(source);
+        return Expression(source);
+      }
+
+      function MultiplicativeExpression(source) {
+        if (source[0].type === 'Number') {
+          let node = {
+            type: 'MultiplicativeExpression',
+            children: [source[0]],
+          };
+          // source.shift();
+          // source.unshift(node);
+          source[0] = node;
+          return MultiplicativeExpression(source);
+        }
+        if (source[0].type === 'MultiplicativeExpression' && source[1] && source[1].value === '*') {
+          let node = {
+            type: 'MultiplicativeExpression',
+            operator: '*',
+            children: [],
+          };
+          node.children.push(source.shift());
+          node.children.push(source.shift());
+          node.children.push(source.shift());
+          source.unshift(node);
+          return MultiplicativeExpression(source);
+        }
+        if (source[0].type === 'MultiplicativeExpression' && source[1] && source[1].value === '/') {
+          let node = {
+            type: 'MultiplicativeExpression',
+            operator: '/',
+            children: [],
+          };
+          node.children.push(source.shift());
+          node.children.push(source.shift());
+          node.children.push(source.shift());
+          source.unshift(node);
+          return MultiplicativeExpression(source);
+        }
+        if (source[0].type === 'MultiplicativeExpression') {
+          return source[0];
+        }
+        return MultiplicativeExpression(source);
+      }
+      function countLexicalItems(expression) {
+        let counter = 0;
+        if (expression.children) {
+          expression.children.forEach((item) => {
+            if (lexicalDictionary.includes(item.type)) {
+              counter++;
+            }
+            if (item.type === 'MultiplicativeExpression' || item.type === 'AdditiveExpression') {
+              counter += countLexicalItems(item);
+            }
+          });
+        }
+        return counter;
+      }
+      function AdditiveExpression(source) {
+        if (source[0].type === 'MultiplicativeExpression') {
+          let node = {
+            type: 'AdditiveExpression',
+            children: [source[0]],
+          };
+          source[0] = node;
+          return AdditiveExpression(source);
+        }
+        if (source[0].type === 'AdditiveExpression' && source[1] && source[1].value === '+') {
+          let node = {
+            type: 'AdditiveExpression',
+            operator: '+',
+            children: [],
+          };
+          node.children.push(source.shift());
+          node.children.push(source.shift());
+          MultiplicativeExpression(source);
+          node.children.push(source.shift());
+          source.unshift(node);
+          return AdditiveExpression(source);
+        }
+        if (source[0].type === 'AdditiveExpression' && source[1] && source[1].value === '-') {
+          let node = {
+            type: 'AdditiveExpression',
+            operator: '-',
+            children: [],
+          };
+          node.children.push(source.shift());
+          node.children.push(source.shift());
+          MultiplicativeExpression(source);
+          node.children.push(source.shift());
+          source.unshift(node);
+          return AdditiveExpression(source);
+        }
+        if (source[0].type === 'AdditiveExpression') {
+          return source[0];
+        }
+        MultiplicativeExpression(source);
+        return AdditiveExpression(source);
+      }
+
+      source = tokenizeAndTrim('1024 * 5 / 24');
+      if (source[0].type !== 'EOF') {
+      }
+      btn.addEventListener('click', () => {
+        let source = tokenizeAndTrim(text.value.trim());
+        if (source[0].type !== 'EOF') {
+          let result = Expression(source);
+          analysis.innerText = JSON.stringify(result, null, '\t');
+        } else {
+          analysis.innerText = JSON.stringify(source[0], null, '\t');
+        }
+      });
+    </script>
+  </body>
+</html>
