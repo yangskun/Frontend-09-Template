@@ -1,0 +1,70 @@
+<!--
+ * @Author: yangskun
+ * @Date: 2021-03-17 19:03:58
+ * @LastEditors: yangskun
+ * @LastEditTime: 2021-03-18 18:55:20
+ * @Description: 字符串分析算法 | 字典树
+-->
+<script>
+    let $ = Symbol('$');
+    class Trie {
+        constructor() {
+            this.root = Object.create(null);
+        }
+
+        /**
+         * @description: 添加字符串树形字典
+         * @param {*} word
+         * @return {*}
+         */
+        insert(word) {
+            let node = this.root;
+            for (let i of word) {
+                if (!node[i]) node[i] = Object.create(null);
+                node = node[i];
+            }
+            if (!($ in node)) node[$] = 0;
+            node[$]++;
+        }
+
+        /**
+         * @description:找到出现最多的随机字符串
+         * @param {*}
+         * @return {*}
+         */
+        most() {
+            let max = 0;
+            let maxWord = null;
+
+            let visit = (node, word) => {
+                if (node[$] && node[$] > max) {
+                    max = node[$];
+                    maxWord = word;
+                }
+                for (let p in node) {
+                    visit(node[p], word + p);
+                }
+            };
+
+            visit(this.root, '');
+            console.log(maxWord, max);
+        }
+    }
+    /**
+     * @description: 产生随机的一个单词
+     * @param {*} length
+     * @return {*} s
+     */
+    function randomWord(length) {
+        var s = '';
+        for (let i = 0; i < length; i++) {
+            s += String.fromCharCode(Math.random() * 26 + 'a'.charCodeAt(0));
+        }
+        return s;
+    }
+
+    let trie = new Trie();
+    for (let i = 0; i < 100000; i++) {
+        trie.insert(randomWord(4));
+    }
+</script>
