@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>JavaScript内置对象</title>
+    </head>
+    <body>
+        <script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g6-3.7.1/dist/g6.min.js"></script>
+        <div id="container"></div>
+        <script>
+            var globalProperties = [
+                'eval',
+                'isFinite',
+                'isNaN',
+                'parseFloat',
+                'parseInt',
+                'decodeURI',
+                'decodeURIComponent',
+                'encodeURI',
+                'encodeURIComponent',
+                'Array',
+                'Date',
+                'RegExp',
+                'Promise',
+                'Proxy',
+                'Map',
+                'WeakMap',
+                'Set',
+                'WeakSet',
+                'Function',
+                'Boolean',
+                'String',
+                'Number',
+                'Symbol',
+                'Object',
+                'Error',
+                'EvalError',
+                'RangeError',
+                'ReferenceError',
+                'SyntaxError',
+                'TypeError',
+                'URIError',
+                'ArrayBuffer',
+                'SharedArrayBuffer',
+                'DataView',
+                'Float32Array',
+                'Float64Array',
+                'Int8Array',
+                'Int16Array',
+                'Int32Array',
+                'Uint8Array',
+                'Uint16Array',
+                'Uint32Array',
+                'Uint8ClampedArray',
+                'Atomics',
+                'JSON',
+                'Math',
+                'Reflect',
+            ];
+            const initData = {
+                nodes: [
+                    {
+                        id: 'JavaScriptIntrinsicObjects',
+                        label: 'JavaScriptIntrinsicObjects',
+                        x: 400,
+                        y: 400,
+                        size: 40,
+                        style: {
+                            fill: 'pink',
+                            stroke: 'red',
+                            lineWidth: 1,
+                        },
+                    },
+                ],
+                // 边集
+                edges: [],
+            };
+            globalProperties.forEach((item) => {
+                initData.nodes.push({
+                    id: item,
+                    label: item,
+                });
+                initData.edges.push({
+                    source: 'JavaScriptIntrinsicObjects',
+                    target: item,
+                });
+            });
+            const graph = new G6.Graph({
+                container: 'container',
+                width: 800,
+                height: 800,
+                animate: true,
+            });
+            graph.data(initData);
+            graph.render();
+        </script>
+    </body>
+</html>
